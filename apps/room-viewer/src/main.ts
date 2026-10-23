@@ -1,6 +1,7 @@
 import { appURL } from './asset-base';
 import { collectInventory, showKnolling, stopKnolling } from './knolling';
 import { showLayout } from './layout';
+import { createPhotoViews } from './photo-views';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
@@ -222,6 +223,7 @@ async function loadRoom(id: string, updated?: RoomModule) {
   // Release the superseded GPU allocations after the replacement is compiled.
   releaseReplaced();
   if (mode === 'knolling') void showKnolling(knollingHost, room, mod.label);
+  photoViews.setRoom(room);
   invalidate();
 }
 
@@ -319,6 +321,7 @@ const savedOrbit = { position: new THREE.Vector3(), target: new THREE.Vector3() 
 
 function setMode(next: Mode) {
   if (next === mode || !room || (next === 'layout' && !room.layout)) return;
+  photoViews.beforeModeChange(next);
   transition = undefined;
   keys.clear();
   walkVelocity.set(0, 0);
@@ -363,6 +366,7 @@ function setMode(next: Mode) {
   hud.querySelectorAll<HTMLElement>('.help').forEach((el) => {
     el.hidden = el.dataset.for !== mode;
   });
+  photoViews.afterModeChange();
 }
 
 function activate(group: 'source' | 'mode' | 'room', value: string) {
@@ -591,7 +595,8 @@ function renderFrame(time: number) {
   const dt = previousTime ? Math.min((time - previousTime) / 1000, 0.05) : 1 / 60;
   previousTime = time;
   if (mode === 'layout' || mode === 'knolling' || document.hidden || !room || preparing) { lastFrame = 0; previousTime = 0; return; }
-  else if (mode === 'walk') updateWalk(dt);
+  else if (mode === 'walk') { updateWalk(dt); photoViews.update(time); }
+  else if (photoViews.update(time)) { /* the photo view owns the camera */ }
   else if (transition) {
     const progress = reducedMotion.matches ? 1 : Math.min(1, (time - transition.start) / 350);
     const eased = 1 - Math.pow(1 - progress, 3);
@@ -642,6 +647,7 @@ document.addEventListener('visibilitychange', () => {
 });
 const viewportObserver = new ResizeObserver(() => {
   camera.aspect = viewport.clientWidth / viewport.clientHeight;
+  photoViews.resize();
   camera.updateProjectionMatrix();
   renderer.setSize(viewport.clientWidth, viewport.clientHeight);
   pipeline.setSize(viewport.clientWidth, viewport.clientHeight);
@@ -649,6 +655,8 @@ const viewportObserver = new ResizeObserver(() => {
 });
 
 viewportObserver.observe(viewport);
+
+const photoViews = createPhotoViews({ scene, camera, orbit, canvas, viewport, hud, invalidate, getMode: () => mode });
 
 // Keep the canvas and shader cache alive while room modules are authored. The
 // old scene remains visible until a replacement has finished building.

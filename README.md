@@ -26,6 +26,15 @@ npm run build
 npm run preview
 ```
 
+### Photo viewpoints
+
+Rooms with posed photos (`photos` on the built room, e.g. House Capture imports) get a **Photos** section in the sidebar. The section is hidden for rooms without photos.
+
+- **Dollhouse:** turn on *Show photo cameras* or press **P** to draw each photo's camera as a small frustum. Hover for a thumbnail. Click one to fly to the photo's exact pose and field of view and overlay the photo.
+- **Photo view:** the slider blends between model and photo. **←/→** step through photos, **[ ]** change the blend, **Esc** returns to the previous view.
+- **Walk around:** a corner thumbnail shows the photo whose pose best matches your view (toggle with **N**). **F** enlarges it at the current blend, and **G** jumps to its exact pose.
+- **URL parameters:** `photos=1` shows the cameras, `photo=N` opens photo N, `blend=0.5` sets the mix (0 model … 1 photo), and `nearest=0` hides the Walk thumbnail.
+
 The demo includes the reconstructed office and selected textures. Original scans and photo collections are not distributed; Scan and Overlay are disabled for this example. Those modes remain available for your own rooms with reference assets.
 
 ## Capture your own space
